@@ -1,13 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0c11;
-  --foreground: #e7e9ef;
-  --surface: #10131a;
-  --surface-raised: #161a24;
-  --muted: #98a1b3;
-  --border: #262c39;
-  --accent: #7ba7ff;
+  /* Surfaces */
+  --background: #090b10;
+  --foreground: #eef1f8;
+  --surface: #10141d;
+  --surface-raised: #151a24;
+  --surface-overlay: #1a202c;
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --surface-active: rgba(255, 255, 255, 0.08);
+  --surface-selected: rgba(106, 152, 255, 0.12);
+  --surface-taskbar: rgba(13, 16, 23, 0.88);
+  --surface-window: rgba(16, 20, 29, 0.96);
+  --surface-window-header: rgba(19, 24, 35, 0.98);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.11);
+  --border-highlight: rgba(255, 255, 255, 0.18);
+  --border-focus: rgba(106, 152, 255, 0.65);
+  --border-selected: rgba(106, 152, 255, 0.4);
+
+  /* Typography / Content */
+  --text-primary: #eef1f8;
+  --text-secondary: #a3acc2;
+  --text-muted: #66728a;
+  --text-subtle: #485368;
+
+  /* Accent */
+  --accent: #6a98ff;
+  --accent-hover: #82aaff;
+  --accent-muted: rgba(106, 152, 255, 0.14);
+  --accent-border: rgba(106, 152, 255, 0.32);
+
+  /* Status */
+  --status-online: #34d399;
+  --status-idle: #fbbf24;
+
+  /* Shadows */
+  --shadow-window: 0 24px 64px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-taskbar: 0 -4px 20px rgba(0, 0, 0, 0.45), 0 -1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-icon-selected: 0 0 0 1px rgba(106, 152, 255, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @theme inline {
@@ -15,9 +55,23 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-taskbar: var(--surface-taskbar);
+  --color-surface-window: var(--surface-window);
+  --color-surface-window-header: var(--surface-window-header);
+  --color-border-subtle: var(--border-subtle);
+  --color-border: var(--border-default);
+  --color-border-default: var(--border-default);
+  --color-border-highlight: var(--border-highlight);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-status-online: var(--status-online);
+  --color-status-idle: var(--status-idle);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -25,25 +79,58 @@
 html,
 body {
   height: 100%;
-}
-
-body {
-  background: var(--background);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.wallpaper {
-  background:
+/* Custom desktop scrollbars where scrollable regions exist */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Desktop Wallpaper Base */
+.wallpaper-canvas {
+  background-color: var(--background);
+  background-image:
     radial-gradient(
-      1100px 560px at 72% -12%,
-      rgba(123, 167, 255, 0.09),
+      1200px 700px at 80% -10%,
+      rgba(106, 152, 255, 0.07),
+      transparent 70%
+    ),
+    radial-gradient(
+      900px 600px at 10% 105%,
+      rgba(52, 211, 153, 0.04),
       transparent 65%
     ),
-    radial-gradient(
-      900px 520px at 18% 112%,
-      rgba(52, 211, 153, 0.05),
-      transparent 60%
-    ),
-    linear-gradient(180deg, #0b0e15 0%, var(--background) 100%);
+    linear-gradient(180deg, #0b0e16 0%, #07090d 100%);
+}
+
+.wallpaper-grid {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
 }

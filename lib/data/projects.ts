@@ -1,11 +1,14 @@
 /**
- * Application / Domain model for Portfolio Projects.
+ * Application / Domain Data Access Layer for Projects.
  * 
  * Strict architectural rule:
- * - Decoupled from raw external API responses (GitHub, Supabase).
- * - Domain fields map to presentation layers cleanly.
- * - Sections with missing data must not render in the UI.
+ * - UI components consume this layer, never raw Supabase queries.
+ * - Handles both server-side retrieval and client-side access.
+ * - Gracefully produces intentional empty states when no data is found.
  */
+
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface ProjectHeroMedia {
   type: "diagram" | "image" | "preview";
@@ -32,9 +35,15 @@ export interface PortfolioProject {
   technologies: readonly string[];
   category: "Platform" | "Systems" | "Frontend" | "Tooling";
   featured: boolean;
+  visible?: boolean;
   thumbnail?: string;
   githubUrl?: string;
   demoUrl?: string;
+  githubRepoId?: number;
+  githubRepoFullName?: string;
+  githubStars?: number;
+  githubForks?: number;
+  githubPrimaryLanguage?: string;
 
   // Rich detail fields (rendered only if present)
   heroMedia?: ProjectHeroMedia;
@@ -45,7 +54,8 @@ export interface PortfolioProject {
   status?: "Active" | "Completed" | "Prototype";
 }
 
-export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
+// Fallback seed records when Supabase is not yet connected
+export const SEED_PROJECTS: readonly PortfolioProject[] = [
   {
     id: "proj-lms",
     slug: "lmsv2",
@@ -208,20 +218,110 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
   },
 ] as const;
 
-export function getPlaceholderProjects(): readonly PortfolioProject[] {
-  return PLACEHOLDER_PROJECTS;
+// Helper to map DB row into domain model
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDatabaseRowToProject(row: any): PortfolioProject {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    shortDescription: row.short_description,
+    category: row.category as PortfolioProject["category"],
+    featured: Boolean(row.featured),
+    status: row.status as PortfolioProject["status"],
+    overview: row.overview || undefined,
+    thumbnail: row.thumbnail_url || undefined,
+    demoUrl: row.demo_url || undefined,
+    githubUrl: row.github_url || undefined,
+    githubRepoId: row.github_repo_id || undefined,
+    githubRepoFullName: row.github_repo_full_name || undefined,
+    githubStars: typeof row.github_stars === "number" ? row.github_stars : undefined,
+    githubForks: typeof row.github_forks === "number" ? row.github_forks : undefined,
+    githubPrimaryLanguage: row.github_primary_language || undefined,
+    visible: row.visible !== undefined ? Boolean(row.visible) : true,
+    technologies: Array.isArray(row.features) && row.features.length > 0 && typeof row.features[0] === "string" 
+      ? (row.features as string[])
+      : ["TypeScript", "Next.js"],
+    features: Array.isArray(row.features) ? (row.features as string[]) : undefined,
+    technicalDetails: Array.isArray(row.technical_details) ? row.technical_details : undefined,
+    challengesDecisions: Array.isArray(row.challenges_decisions) ? row.challenges_decisions : undefined,
+    heroMedia: row.hero_media || undefined,
+  };
 }
 
+/**
+ * Fetches all publicly visible projects from Supabase or fallback seeds.
+ */
+export async function fetchProjects(): Promise<PortfolioProject[]> {
+  const client = typeof window === "undefined" 
+    ? getSupabaseServerClient() 
+    : getSupabaseBrowserClient();
+
+  if (!client) {
+    return [...SEED_PROJECTS];
+  }
+
+  try {
+    const { data, error } = await client
+      .from("projects")
+      .select("*")
+      .eq("visible", true)
+      .order("sort_order", { ascending: true });
+
+    if (error || !data) {
+      console.warn("Supabase projects query returned error/null:", error?.message);
+      return [];
+    }
+
+    return data.map(mapDatabaseRowToProject);
+  } catch (err) {
+    console.warn("Failed to query Supabase projects:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetches a single project by slug.
+ */
+export async function fetchProjectBySlug(slug: string): Promise<PortfolioProject | null> {
+  const client = typeof window === "undefined" 
+    ? getSupabaseServerClient() 
+    : getSupabaseBrowserClient();
+
+  if (!client) {
+    return SEED_PROJECTS.find((p) => p.slug === slug) || null;
+  }
+
+  try {
+    const { data, error } = await client
+      .from("projects")
+      .select("*")
+      .eq("slug", slug)
+      .eq("visible", true)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return mapDatabaseRowToProject(data);
+  } catch (err) {
+    console.warn("Failed to query Supabase project by slug:", err);
+    return null;
+  }
+}
+
+// Synchronous helpers for client components / initial render
 export function getAllProjects(): readonly PortfolioProject[] {
-  return PLACEHOLDER_PROJECTS;
+  return SEED_PROJECTS;
 }
 
 export function getFeaturedProjects(): readonly PortfolioProject[] {
-  return PLACEHOLDER_PROJECTS.filter((p) => p.featured);
+  return SEED_PROJECTS.filter((p) => p.featured);
 }
 
 export function getProjectBySlug(slug: string): PortfolioProject | undefined {
-  return PLACEHOLDER_PROJECTS.find((p) => p.slug === slug);
+  return SEED_PROJECTS.find((p) => p.slug === slug);
 }
 
 export function getProjectCategories(): readonly string[] {

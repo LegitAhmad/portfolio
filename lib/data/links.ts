@@ -1,11 +1,14 @@
 /**
- * Typed temporary content source for Links & Online Presence.
+ * Application / Domain Data Access Layer for Links & Online Presence.
  */
+
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface ExternalLinkItem {
   id: string;
   title: string;
-  category: "Code & Contributions" | "Professional Network" | "Discussions" | "Direct Communication";
+  category: string;
   handlePlaceholder: string;
   urlPlaceholder: string;
   description: string;
@@ -13,7 +16,7 @@ export interface ExternalLinkItem {
   type: "github" | "linkedin" | "x" | "email" | "rss";
 }
 
-export const PLACEHOLDER_LINKS: readonly ExternalLinkItem[] = [
+export const SEED_LINKS: readonly ExternalLinkItem[] = [
   {
     id: "link-github",
     title: "GitHub",
@@ -56,6 +59,47 @@ export const PLACEHOLDER_LINKS: readonly ExternalLinkItem[] = [
   },
 ] as const;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDatabaseRowToLink(row: any): ExternalLinkItem {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    handlePlaceholder: row.handle,
+    urlPlaceholder: row.url,
+    description: row.description,
+    verified: Boolean(row.verified),
+    type: (row.type as ExternalLinkItem["type"]) || "github",
+  };
+}
+
+export async function fetchLinks(): Promise<ExternalLinkItem[]> {
+  const client = typeof window === "undefined"
+    ? getSupabaseServerClient()
+    : getSupabaseBrowserClient();
+
+  if (!client) {
+    return [...SEED_LINKS];
+  }
+
+  try {
+    const { data, error } = await client
+      .from("links")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error || !data) {
+      console.warn("Supabase links query error:", error?.message);
+      return [];
+    }
+
+    return data.map(mapDatabaseRowToLink);
+  } catch (err) {
+    console.warn("Failed to query Supabase links:", err);
+    return [];
+  }
+}
+
 export function getPlaceholderLinks(): readonly ExternalLinkItem[] {
-  return PLACEHOLDER_LINKS;
+  return SEED_LINKS;
 }

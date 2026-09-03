@@ -80,9 +80,12 @@ export function ProjectDetailView({
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-border-subtle text-xs font-mono text-text-primary transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.1] border border-border-subtle text-xs font-mono text-text-primary transition-colors cursor-pointer"
             >
               <span>GitHub Repository</span>
+              {typeof project.githubStars === "number" && project.githubStars > 0 && (
+                <span className="text-amber-300 font-medium">★ {project.githubStars}</span>
+              )}
               <span aria-hidden="true">↗</span>
             </a>
           )}

@@ -1,11 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { getPlaceholderLinks, type ExternalLinkItem } from "@/lib/data/links";
+import { useState, useEffect } from "react";
+import { getPlaceholderLinks, fetchLinks, type ExternalLinkItem } from "@/lib/data/links";
 
 export function LinksApp() {
-  const links = useMemo(() => getPlaceholderLinks(), []);
+  const [links, setLinks] = useState<readonly ExternalLinkItem[]>(getPlaceholderLinks());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLinks().then((data) => {
+      if (data && data.length > 0) {
+        setLinks(data);
+      }
+    });
+  }, []);
 
   const handleCopyHandle = (item: ExternalLinkItem) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -26,7 +34,7 @@ export function LinksApp() {
             Online Presence & Profiles
           </h1>
           <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-status-online/15 border border-status-online/30 text-status-online font-medium">
-            4 Channels Verified
+            {links.filter((l) => l.verified).length} Channels Verified
           </span>
         </div>
         <p className="text-xs text-text-muted">
@@ -34,8 +42,14 @@ export function LinksApp() {
         </p>
       </header>
 
-      {/* Links List */}
-      <div className="space-y-2.5" role="list">
+      {links.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center p-6 rounded-lg border border-dashed border-border-subtle bg-surface-raised/10">
+          <p className="text-xs text-text-secondary font-medium">No external links found</p>
+          <p className="font-mono text-[11px] text-text-muted mt-1">Online presence channels will populate from database.</p>
+        </div>
+      ) : (
+        /* Links List */
+        <div className="space-y-2.5" role="list">
         {links.map((item) => (
           <div
             key={item.id}
@@ -87,6 +101,7 @@ export function LinksApp() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

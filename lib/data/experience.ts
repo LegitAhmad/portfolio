@@ -1,6 +1,9 @@
 /**
- * Typed temporary content source for Experience Timeline.
+ * Application / Domain Data Access Layer for Experience Timeline.
  */
+
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface ExperienceRecord {
   id: string;
@@ -14,7 +17,7 @@ export interface ExperienceRecord {
   technologies: readonly string[];
 }
 
-export const PLACEHOLDER_EXPERIENCE: readonly ExperienceRecord[] = [
+export const SEED_EXPERIENCE: readonly ExperienceRecord[] = [
   {
     id: "exp-1",
     roleTitle: "Staff Software Engineer (Placeholder)",
@@ -26,7 +29,7 @@ export const PLACEHOLDER_EXPERIENCE: readonly ExperienceRecord[] = [
       "Led the architectural migration of core customer-facing applications toward event-driven micro-frontends, reducing critical p99 page latency by 45%.",
     achievements: [
       "Engineered an edge-cached routing layer handling 250M+ requests per month with 99.99% reliability.",
-      "Established strict type safety standards and shared architectural components across 8 product engineering squads.",
+      "Established strict type safety standards across 8 engineering squads.",
       "Mentored senior engineers in distributed systems design, observability, and performance optimization.",
     ],
     technologies: ["Next.js", "TypeScript", "PostgreSQL", "Go", "Vercel", "Kafka"],
@@ -64,6 +67,48 @@ export const PLACEHOLDER_EXPERIENCE: readonly ExperienceRecord[] = [
   },
 ] as const;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDatabaseRowToExperience(row: any): ExperienceRecord {
+  return {
+    id: row.id,
+    roleTitle: row.role_title,
+    companyPlaceholder: row.company_name,
+    location: row.location,
+    timeframe: row.timeframe,
+    isCurrent: Boolean(row.is_current),
+    summary: row.summary,
+    achievements: Array.isArray(row.achievements) ? row.achievements : [],
+    technologies: Array.isArray(row.technologies) ? row.technologies : [],
+  };
+}
+
+export async function fetchExperience(): Promise<ExperienceRecord[]> {
+  const client = typeof window === "undefined"
+    ? getSupabaseServerClient()
+    : getSupabaseBrowserClient();
+
+  if (!client) {
+    return [...SEED_EXPERIENCE];
+  }
+
+  try {
+    const { data, error } = await client
+      .from("experience")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error || !data) {
+      console.warn("Supabase experience query error:", error?.message);
+      return [];
+    }
+
+    return data.map(mapDatabaseRowToExperience);
+  } catch (err) {
+    console.warn("Failed to query Supabase experience:", err);
+    return [];
+  }
+}
+
 export function getPlaceholderExperience(): readonly ExperienceRecord[] {
-  return PLACEHOLDER_EXPERIENCE;
+  return SEED_EXPERIENCE;
 }

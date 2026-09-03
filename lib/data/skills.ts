@@ -1,7 +1,10 @@
 /**
- * Typed temporary content source for Skills & Competencies.
+ * Application / Domain Data Access Layer for Skills & Competencies.
  * Strict rule: No fake proficiency percentages. Categorized by technical domain.
  */
+
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface SkillItem {
   name: string;
@@ -16,7 +19,7 @@ export interface SkillCategoryGroup {
   skills: readonly SkillItem[];
 }
 
-export const PLACEHOLDER_SKILL_GROUPS: readonly SkillCategoryGroup[] = [
+export const SEED_SKILL_GROUPS: readonly SkillCategoryGroup[] = [
   {
     id: "frontend-arch",
     categoryName: "Frontend & Interface Architecture",
@@ -66,6 +69,55 @@ export const PLACEHOLDER_SKILL_GROUPS: readonly SkillCategoryGroup[] = [
   },
 ] as const;
 
+export async function fetchSkillGroups(): Promise<SkillCategoryGroup[]> {
+  const client = typeof window === "undefined"
+    ? getSupabaseServerClient()
+    : getSupabaseBrowserClient();
+
+  if (!client) {
+    return [...SEED_SKILL_GROUPS];
+  }
+
+  try {
+    const { data, error } = await client
+      .from("skills")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return [];
+    }
+
+    // Group items by category_name
+    const map = new Map<string, SkillItem[]>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of (data as any[])) {
+      const items = map.get(row.category_name) || [];
+      items.push({
+        name: row.name,
+        focus: row.focus,
+        context: row.context,
+      });
+      map.set(row.category_name, items);
+    }
+
+    const groups: SkillCategoryGroup[] = [];
+    for (const [categoryName, skills] of map.entries()) {
+      groups.push({
+        id: categoryName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        categoryName,
+        headline: "Verified architectural competencies",
+        skills,
+      });
+    }
+
+    return groups;
+  } catch (err) {
+    console.warn("Failed to query Supabase skills:", err);
+    return [];
+  }
+}
+
 export function getPlaceholderSkillGroups(): readonly SkillCategoryGroup[] {
-  return PLACEHOLDER_SKILL_GROUPS;
+  return SEED_SKILL_GROUPS;
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, type KeyboardEvent } from "react";
+import { useState, useMemo, useEffect, type KeyboardEvent } from "react";
 import {
   getAllProjects,
+  fetchProjects,
   getProjectCategories,
   type PortfolioProject,
 } from "@/lib/data/projects";
@@ -28,14 +29,23 @@ export function ProjectExplorerApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [projectsList, setProjectsList] = useState<readonly PortfolioProject[]>(getAllProjects());
 
   const openWindow = useWindowStore((state) => state.openWindow);
-  const projects = useMemo(() => getAllProjects(), []);
   const categories = useMemo(() => getProjectCategories().filter((c) => c !== "All"), []);
+
+  // Fetch live Supabase projects when configured
+  useEffect(() => {
+    fetchProjects().then((data) => {
+      if (data && data.length > 0) {
+        setProjectsList(data);
+      }
+    });
+  }, []);
 
   // Filter projects by category/featured and search query
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    return projectsList.filter((project) => {
       // 1. Sidebar filter check
       if (activeFilter === "featured" && !project.featured) {
         return false;
@@ -60,7 +70,7 @@ export function ProjectExplorerApp() {
 
       return titleMatch || descMatch || catMatch || techMatch;
     });
-  }, [projects, activeFilter, searchQuery]);
+  }, [projectsList, activeFilter, searchQuery]);
 
   // Project opening dispatcher using `project:${slug}` as required
   const handleOpenProject = (project: PortfolioProject) => {
@@ -126,7 +136,7 @@ export function ProjectExplorerApp() {
                   <span>All Projects</span>
                 </div>
                 <span className="font-mono text-[10px] text-text-muted">
-                  {projects.length}
+                  {projectsList.length}
                 </span>
               </button>
 
@@ -153,7 +163,7 @@ export function ProjectExplorerApp() {
                   <span>Featured</span>
                 </div>
                 <span className="font-mono text-[10px] text-text-muted">
-                  {projects.filter((p) => p.featured).length}
+                  {projectsList.filter((p) => p.featured).length}
                 </span>
               </button>
             </nav>
@@ -166,7 +176,7 @@ export function ProjectExplorerApp() {
             </div>
             <nav className="flex flex-col gap-1 w-full" aria-label="Categories">
               {categories.map((cat) => {
-                const count = projects.filter((p) => p.category === cat).length;
+                const count = projectsList.filter((p) => p.category === cat).length;
                 const isSelected = activeFilter === cat;
 
                 return (

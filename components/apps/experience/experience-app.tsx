@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { getPlaceholderExperience } from "@/lib/data/experience";
+import { useState, useEffect } from "react";
+import { getPlaceholderExperience, fetchExperience, type ExperienceRecord } from "@/lib/data/experience";
 
 export function ExperienceApp() {
-  const experiences = useMemo(() => getPlaceholderExperience(), []);
+  const [experiences, setExperiences] = useState<readonly ExperienceRecord[]>(getPlaceholderExperience());
+
+  useEffect(() => {
+    fetchExperience().then((data) => {
+      if (data && data.length > 0) {
+        setExperiences(data);
+      }
+    });
+  }, []);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto p-4 sm:p-6 space-y-6 bg-surface text-text-primary">
@@ -23,8 +31,14 @@ export function ExperienceApp() {
         </p>
       </header>
 
-      {/* Timeline Section */}
-      <div className="relative pl-6 space-y-8 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
+      {experiences.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center p-6 rounded-lg border border-dashed border-border-subtle bg-surface-raised/10">
+          <p className="text-xs text-text-secondary font-medium">No experience records found</p>
+          <p className="font-mono text-[11px] text-text-muted mt-1">Timeline entries will appear once populated in database.</p>
+        </div>
+      ) : (
+        /* Timeline Section */
+        <div className="relative pl-6 space-y-8 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
         {experiences.map((exp) => (
           <article key={exp.id} className="relative space-y-2.5">
             {/* Timeline node marker */}
@@ -80,6 +94,7 @@ export function ExperienceApp() {
           </article>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { getPlaceholderSkillGroups } from "@/lib/data/skills";
+import { useState, useEffect } from "react";
+import { getPlaceholderSkillGroups, fetchSkillGroups, type SkillCategoryGroup } from "@/lib/data/skills";
 
 export function SkillsApp() {
-  const groups = useMemo(() => getPlaceholderSkillGroups(), []);
+  const [groups, setGroups] = useState<readonly SkillCategoryGroup[]>(getPlaceholderSkillGroups());
+
+  useEffect(() => {
+    fetchSkillGroups().then((data) => {
+      if (data && data.length > 0) {
+        setGroups(data);
+      }
+    });
+  }, []);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto p-4 sm:p-6 space-y-6 bg-surface text-text-primary">
@@ -23,8 +31,14 @@ export function SkillsApp() {
         </p>
       </header>
 
-      {/* Categorized Groups */}
-      <div className="space-y-6">
+      {groups.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center p-6 rounded-lg border border-dashed border-border-subtle bg-surface-raised/10">
+          <p className="text-xs text-text-secondary font-medium">No skill categories found</p>
+          <p className="font-mono text-[11px] text-text-muted mt-1">Technical skill groups will populate from database.</p>
+        </div>
+      ) : (
+        /* Categorized Groups */
+        <div className="space-y-6">
         {groups.map((group) => (
           <section key={group.id} className="space-y-3" aria-labelledby={`group-${group.id}`}>
             {/* Category Title */}
@@ -64,6 +78,7 @@ export function SkillsApp() {
           </section>
         ))}
       </div>
+      )}
     </div>
   );
 }

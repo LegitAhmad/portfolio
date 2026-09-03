@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProjectBySlug, getAllProjects } from "@/lib/data/projects";
+import { getProjectBySlug, fetchProjectBySlug, getAllProjects } from "@/lib/data/projects";
 import { ProjectDetailView } from "@/components/apps/project-explorer/project-detail-view";
 
 interface ProjectPageProps {
@@ -14,7 +14,7 @@ export async function generateMetadata({
   params,
 }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = (await fetchProjectBySlug(slug)) || getProjectBySlug(slug);
 
   if (!project) {
     return {
@@ -41,7 +41,7 @@ export async function generateStaticParams() {
  */
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = (await fetchProjectBySlug(slug)) || getProjectBySlug(slug);
 
   if (!project) {
     notFound();

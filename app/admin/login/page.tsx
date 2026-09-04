@@ -45,6 +45,7 @@ export default function AdminLoginPage() {
         provider: "github",
         options: {
           redirectTo: `${window.location.origin}/admin/callback`,
+          scopes: "user:email",
         },
       });
 

@@ -290,6 +290,7 @@ export type Database = {
           description: string;
           type: string;
           verified: boolean;
+          visible: boolean;
           sort_order: number;
           created_at: string;
         };
@@ -302,6 +303,7 @@ export type Database = {
           description: string;
           type?: string;
           verified?: boolean;
+          visible?: boolean;
           sort_order?: number;
           created_at?: string;
         };
@@ -314,6 +316,7 @@ export type Database = {
           description?: string;
           type?: string;
           verified?: boolean;
+          visible?: boolean;
           sort_order?: number;
           created_at?: string;
         };
@@ -398,6 +401,45 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      profile: {
+        Row: {
+          id: string;
+          full_name: string;
+          role_headline: string;
+          location: string;
+          avatar_url: string | null;
+          bio_paragraphs: Json;
+          current_focus: Json;
+          education: Json;
+          interests: Json;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          full_name: string;
+          role_headline: string;
+          location?: string;
+          avatar_url?: string | null;
+          bio_paragraphs?: Json;
+          current_focus?: Json;
+          education?: Json;
+          interests?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string;
+          role_headline?: string;
+          location?: string;
+          avatar_url?: string | null;
+          bio_paragraphs?: Json;
+          current_focus?: Json;
+          education?: Json;
+          interests?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: {

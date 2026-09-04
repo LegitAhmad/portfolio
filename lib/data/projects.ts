@@ -270,13 +270,13 @@ export async function fetchProjects(): Promise<PortfolioProject[]> {
 
     if (error || !data) {
       console.warn("Supabase projects query returned error/null:", error?.message);
-      return [];
+      return [...SEED_PROJECTS];
     }
 
     return data.map(mapDatabaseRowToProject);
   } catch (err) {
     console.warn("Failed to query Supabase projects:", err);
-    return [];
+    return [...SEED_PROJECTS];
   }
 }
 
@@ -301,13 +301,13 @@ export async function fetchProjectBySlug(slug: string): Promise<PortfolioProject
       .maybeSingle();
 
     if (error || !data) {
-      return null;
+      return SEED_PROJECTS.find((p) => p.slug === slug) || null;
     }
 
     return mapDatabaseRowToProject(data);
   } catch (err) {
     console.warn("Failed to query Supabase project by slug:", err);
-    return null;
+    return SEED_PROJECTS.find((p) => p.slug === slug) || null;
   }
 }
 

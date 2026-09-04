@@ -18,7 +18,7 @@ export function ProjectDetailView({
   standalone = false,
 }: ProjectDetailViewProps) {
   return (
-    <div className="flex flex-col h-full overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 bg-surface text-text-primary">
+    <div className="flex flex-col p-4 sm:p-6 md:p-8 space-y-6 bg-surface text-text-primary">
       {/* ----------------------------------------------------------------- */}
       {/* Header Banner: Title, Category, Status, Short Description         */}
       {/* ----------------------------------------------------------------- */}

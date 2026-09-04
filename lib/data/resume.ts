@@ -23,23 +23,23 @@ export function getResumeConfig(): ResumeConfig {
 export function executeResumeDownload(
   notify?: (message: string, isSuccess: boolean) => void
 ): void {
-  const config = getResumeConfig();
+  if (typeof window === "undefined") return;
 
-  if (!config.available) {
-    notify?.(
-      "Resume download: Asset pending in /public/ (Action abstraction active)",
-      false
-    );
-    return;
-  }
-
-  if (typeof window !== "undefined") {
-    const link = document.createElement("a");
-    link.href = config.downloadPath;
-    link.download = config.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    notify?.("Initiating resume download...", true);
-  }
+  fetch("/resume.pdf", { method: "HEAD" })
+    .then((res) => {
+      if (res.ok) {
+        const link = document.createElement("a");
+        link.href = "/resume.pdf";
+        link.download = "Software-Engineer-Resume.pdf";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        notify?.("Initiating resume download...", true);
+      } else {
+        notify?.("Resume pending: Place resume.pdf in /public/ to enable direct download.", false);
+      }
+    })
+    .catch(() => {
+      notify?.("Resume pending: Place resume.pdf in /public/ to enable direct download.", false);
+    });
 }

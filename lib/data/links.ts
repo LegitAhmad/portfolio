@@ -13,6 +13,7 @@ export interface ExternalLinkItem {
   urlPlaceholder: string;
   description: string;
   verified: boolean;
+  visible?: boolean;
   type: "github" | "linkedin" | "x" | "email" | "rss";
 }
 
@@ -25,6 +26,7 @@ export const SEED_LINKS: readonly ExternalLinkItem[] = [
     urlPlaceholder: "https://github.com",
     description: "Open source repositories, architectural templates, and engineering experiments.",
     verified: true,
+    visible: true,
     type: "github",
   },
   {
@@ -35,6 +37,7 @@ export const SEED_LINKS: readonly ExternalLinkItem[] = [
     urlPlaceholder: "https://linkedin.com",
     description: "Career timeline, corporate milestones, and professional network updates.",
     verified: true,
+    visible: true,
     type: "linkedin",
   },
   {
@@ -45,6 +48,7 @@ export const SEED_LINKS: readonly ExternalLinkItem[] = [
     urlPlaceholder: "https://x.com",
     description: "Short-form technical commentary, architectural takeaways, and engineering links.",
     verified: true,
+    visible: true,
     type: "x",
   },
   {
@@ -55,6 +59,7 @@ export const SEED_LINKS: readonly ExternalLinkItem[] = [
     urlPlaceholder: "mailto:contact@developer.internal",
     description: "Direct channel for architectural consultation, queries, and project inquiries.",
     verified: true,
+    visible: true,
     type: "email",
   },
 ] as const;
@@ -69,6 +74,7 @@ function mapDatabaseRowToLink(row: any): ExternalLinkItem {
     urlPlaceholder: row.url,
     description: row.description,
     verified: Boolean(row.verified),
+    visible: row.visible !== undefined ? Boolean(row.visible) : true,
     type: (row.type as ExternalLinkItem["type"]) || "github",
   };
 }
@@ -86,17 +92,18 @@ export async function fetchLinks(): Promise<ExternalLinkItem[]> {
     const { data, error } = await client
       .from("links")
       .select("*")
+      .eq("visible", true)
       .order("sort_order", { ascending: true });
 
     if (error || !data) {
       console.warn("Supabase links query error:", error?.message);
-      return [];
+      return [...SEED_LINKS];
     }
 
     return data.map(mapDatabaseRowToLink);
   } catch (err) {
     console.warn("Failed to query Supabase links:", err);
-    return [];
+    return [...SEED_LINKS];
   }
 }
 

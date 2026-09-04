@@ -25,6 +25,25 @@ export function Desktop() {
         minSize: APP_REGISTRY.projects.minSize,
       });
     }
+
+    // Accessibility: Escape minimizes active window when not in an input field
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+          return;
+        }
+        const activeId = useWindowStore.getState().activeWindowId;
+        if (activeId) {
+          useWindowStore.getState().minimizeWindow(activeId);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [openWindow]);
 
   // Clear icon selection when clicking empty desktop canvas
@@ -62,7 +81,7 @@ export function Desktop() {
   return (
     <main
       onClick={handleDesktopBackgroundClick}
-      className="relative w-screen h-screen h-dvh overflow-hidden select-none bg-background text-foreground font-sans"
+      className="fixed inset-0 w-screen h-screen h-dvh overflow-hidden select-none bg-background text-foreground font-sans"
     >
       {/* 1. Atmospheric Wallpaper Layer */}
       <Wallpaper />

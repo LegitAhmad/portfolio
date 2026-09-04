@@ -18,13 +18,26 @@ export async function generateMetadata({
 
   if (!project) {
     return {
-      title: "Project Not Found — Portfolio",
+      title: "Project Not Found",
     };
   }
 
   return {
-    title: `${project.title} — Portfolio Project`,
+    title: project.title,
     description: project.shortDescription,
+    keywords: [...project.technologies, project.category, "Software Engineering"],
+    openGraph: {
+      type: "article",
+      title: `${project.title} — Portfolio Project`,
+      description: project.shortDescription,
+      images: project.thumbnail ? [{ url: project.thumbnail }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${project.title} — Portfolio Project`,
+      description: project.shortDescription,
+      images: project.thumbnail ? [project.thumbnail] : undefined,
+    },
   };
 }
 

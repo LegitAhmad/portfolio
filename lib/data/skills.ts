@@ -1,15 +1,25 @@
 /**
  * Application / Domain Data Access Layer for Skills & Competencies.
- * Strict rule: No fake proficiency percentages. Categorized by technical domain.
+ * 
+ * Strict rule: No fake proficiency percentages.
+ * Categorized technical skill groups:
+ * - Languages
+ * - Frontend
+ * - Backend
+ * - Databases
+ * - Infrastructure
+ * - Tools
  */
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface SkillItem {
+  id?: string;
   name: string;
   focus: string;
   context: string;
+  sortOrder?: number;
 }
 
 export interface SkillCategoryGroup {
@@ -21,50 +31,70 @@ export interface SkillCategoryGroup {
 
 export const SEED_SKILL_GROUPS: readonly SkillCategoryGroup[] = [
   {
-    id: "frontend-arch",
-    categoryName: "Frontend & Interface Architecture",
-    headline: "High-fidelity, responsive client-side platforms and interaction design",
+    id: "languages",
+    categoryName: "Languages",
+    headline: "Core programming languages utilized in production systems and scripting",
     skills: [
-      { name: "TypeScript", focus: "Strict typing", context: "Generics, conditional types, and schema inference" },
-      { name: "React 19 / 18", focus: "Component architecture", context: "Server Components, hooks, reconciliation, concurrent modes" },
-      { name: "Next.js", focus: "App Router & SSR", context: "Server Actions, streaming, route handlers, metadata caching" },
-      { name: "Tailwind CSS", focus: "Utility & Design Tokens", context: "CSS variables, themes, fluid responsive layouts" },
-      { name: "Zustand & Motion", focus: "State & Animation", context: "Selective store subscriptions, physics-based springs" },
-      { name: "Web APIs & DOM", focus: "Platform primitives", context: "Pointer events, canvas, intersection observers, accessibility" },
+      { name: "TypeScript", focus: "Static Type Systems", context: "Strict typing, conditional generics, and end-to-end schema validation" },
+      { name: "Go", focus: "Systems & Concurrency", context: "High-throughput services, goroutines, and low-latency network daemons" },
+      { name: "Rust", focus: "Memory Safety", context: "Systems programming, zero-cost abstractions, and CLI tooling" },
+      { name: "SQL", focus: "Query Optimization", context: "Declarative schemas, indexing strategies, CTEs, and relational algebra" },
+      { name: "Bash / Shell", focus: "OS Automation", context: "POSIX scripts, build pipelines, and system maintenance utilities" },
     ],
   },
   {
-    id: "backend-persistence",
-    categoryName: "Backend & Data Persistence",
-    headline: "Reliable database modeling, serverless endpoints, and API design",
+    id: "frontend",
+    categoryName: "Frontend",
+    headline: "Client-side platforms, component architecture, and responsive user interfaces",
     skills: [
-      { name: "PostgreSQL", focus: "Relational Modeling", context: "Indexes, foreign keys, views, complex joins" },
-      { name: "Supabase", focus: "BaaS & Auth", context: "Row-level security (RLS), Postgres functions, storage" },
-      { name: "Node.js & Go", focus: "Server Runtimes", context: "RESTful endpoints, asynchronous pipelines, CLI tooling" },
-      { name: "Redis", focus: "In-Memory Caching", context: "Session state, rate limiting, pub/sub signaling" },
-      { name: "GraphQL & REST", focus: "API Contracts", context: "Typed query resolution, pagination, error schemas" },
+      { name: "React 19 / 18", focus: "Component Model", context: "Server Components, hooks, concurrent scheduling, and reconciliation" },
+      { name: "Next.js", focus: "App Router & SSR", context: "Server Actions, route handlers, dynamic streaming, and edge caching" },
+      { name: "Tailwind CSS", focus: "Utility Architecture", context: "Design token systems, CSS variables, and fluid responsive layouts" },
+      { name: "Zustand & Motion", focus: "State & Transitions", context: "Deterministic store subscriptions and physics-based motion" },
+      { name: "Web APIs & a11y", focus: "Browser Primitives", context: "Pointer events, canvas, ARIA patterns, and screen reader parity" },
     ],
   },
   {
-    id: "systems-devops",
-    categoryName: "Systems & Infrastructure",
-    headline: "Deployment automation, environment orchestration, and monitoring",
+    id: "backend",
+    categoryName: "Backend",
+    headline: "API contracts, asynchronous microservices, and server runtimes",
     skills: [
-      { name: "Vercel & Cloudflare", focus: "Edge / Serverless", context: "Edge middleware, global distribution, zero-config deploys" },
-      { name: "Docker", focus: "Containerization", context: "Multi-stage builds, compose networks, reproducible environments" },
-      { name: "Git & GitHub Apps", focus: "VCS & Automation", context: "Branching strategies, CI/CD actions, webhook verification" },
-      { name: "Linux / POSIX", focus: "System Administration", context: "Shell scripting, process management, performance diagnostics" },
+      { name: "Node.js", focus: "Event-Loop Runtime", context: "Asynchronous I/O pipelines, streaming buffers, and HTTP endpoints" },
+      { name: "REST & GraphQL", focus: "API Contracts", context: "Type-safe schemas, pagination, rate limiting, and idempotent mutations" },
+      { name: "Event Architecture", focus: "Asynchronous Messaging", context: "Webhook verification, queue processing, and decoupled worker models" },
+      { name: "Auth & Security", focus: "Access Control", context: "Timing-safe HMAC validation, JWT authentication, and token revocation" },
     ],
   },
   {
-    id: "engineering-practices",
-    categoryName: "Engineering Discipline",
-    headline: "Principles governing code quality, maintainability, and delivery",
+    id: "databases",
+    categoryName: "Databases",
+    headline: "Relational persistence, in-memory caching, and security policies",
     skills: [
-      { name: "Strict Type Safety", focus: "End-to-End Typing", context: "Eliminating runtime unexpected values through strict boundaries" },
-      { name: "Accessibility (a11y)", focus: "Inclusive Standards", context: "ARIA specifications, keyboard traversal, screen reader parity" },
-      { name: "Performance Profiling", focus: "Web Vitals", context: "INP, LCP, CLS tracking, avoiding layout thrashing" },
-      { name: "Test-Driven Design", focus: "Behavior Verification", context: "Unit tests, integration pipelines, regression prevention" },
+      { name: "PostgreSQL", focus: "Relational Engine", context: "Schema modeling, constraints, transactional isolation, and indexes" },
+      { name: "Supabase", focus: "Backend-as-a-Service", context: "Row Level Security (RLS), Postgres functions, and Storage buckets" },
+      { name: "Redis", focus: "In-Memory Store", context: "Key-value caching, ephemeral session state, and atomic counters" },
+    ],
+  },
+  {
+    id: "infrastructure",
+    categoryName: "Infrastructure",
+    headline: "Containerization, cloud deployment, and system administration",
+    skills: [
+      { name: "Linux / POSIX", focus: "System Administration", context: "Process supervision, systemd, resource monitoring, and permissions" },
+      { name: "Docker", focus: "Containerization", context: "Multi-stage builds, isolated networks, and reproducible runtimes" },
+      { name: "Vercel & Edge", focus: "Cloud Distribution", context: "Serverless execution limits, edge middleware, and zero-downtime deploys" },
+      { name: "CI / CD", focus: "Automation Pipelines", context: "GitHub Actions workflows, build matrix testing, and artifact publishing" },
+    ],
+  },
+  {
+    id: "tools",
+    categoryName: "Tools",
+    headline: "Developer tooling, version control, and diagnostic instrumentation",
+    skills: [
+      { name: "Git & GitHub", focus: "Version Control", context: "Trunk-based workflow, interactive rebase, and GitHub Apps integration" },
+      { name: "Turbopack & Vite", focus: "Build Tooling", context: "Incremental compilation, HMR optimization, and bundle minimization" },
+      { name: "Playwright & Vitest", focus: "Testing Suites", context: "End-to-end integration flows and regression prevention" },
+      { name: "Web Vitals Profiling", focus: "Performance Diagnostics", context: "LCP, INP, CLS optimization, and avoiding main-thread bottlenecks" },
     ],
   },
 ] as const;
@@ -85,36 +115,40 @@ export async function fetchSkillGroups(): Promise<SkillCategoryGroup[]> {
       .order("sort_order", { ascending: true });
 
     if (error || !data || data.length === 0) {
-      return [];
+      return [...SEED_SKILL_GROUPS];
     }
 
     // Group items by category_name
     const map = new Map<string, SkillItem[]>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const row of (data as any[])) {
-      const items = map.get(row.category_name) || [];
+      const cat = row.category_name || "General";
+      const items = map.get(cat) || [];
       items.push({
+        id: row.id,
         name: row.name,
         focus: row.focus,
         context: row.context,
+        sortOrder: row.sort_order,
       });
-      map.set(row.category_name, items);
+      map.set(cat, items);
     }
 
     const groups: SkillCategoryGroup[] = [];
     for (const [categoryName, skills] of map.entries()) {
+      const id = categoryName.toLowerCase().replace(/[^a-z0-9]/g, "-");
       groups.push({
-        id: categoryName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        id,
         categoryName,
-        headline: "Verified architectural competencies",
+        headline: `Technical proficiencies in ${categoryName.toLowerCase()}`,
         skills,
       });
     }
 
     return groups;
   } catch (err) {
-    console.warn("Failed to query Supabase skills:", err);
-    return [];
+    console.warn("Failed to fetch skills from Supabase:", err);
+    return [...SEED_SKILL_GROUPS];
   }
 }
 

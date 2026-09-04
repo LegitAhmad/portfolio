@@ -9,27 +9,80 @@ export default function AdminCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     async function handleAuth() {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError("Supabase client is not available");
+        if (active) setError("Supabase client is not available");
         return;
       }
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        setError(sessionError?.message || "Failed to establish session");
+      // 1. Check for error parameters in URL query or hash
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlError = urlParams.get("error_description") || urlParams.get("error");
+      if (urlError) {
+        if (active) setError(decodeURIComponent(urlError));
         return;
       }
 
+      const code = urlParams.get("code");
+      let activeSession = null;
+
+      if (code) {
+        // Exchange PKCE code for session
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          console.warn("Code exchange error:", exchangeError);
+          // Try fallback to getSession in case Supabase client already exchanged it
+          const { data: sessionData } = await supabase.auth.getSession();
+          activeSession = sessionData?.session;
+          if (!activeSession && active) {
+            setError(exchangeError.message);
+            return;
+          }
+        } else {
+          activeSession = data.session;
+        }
+      } else {
+        // Implicit hash flow or existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          if (active) setError(sessionError.message);
+          return;
+        }
+        activeSession = session;
+      }
+
+      if (!activeSession) {
+        // Final fallback: listen for SIGNED_IN event briefly in case auto-exchange is completing
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (session && active) {
+            authListener.subscription.unsubscribe();
+            await verifyAndRedirect(session.access_token, session.user.email);
+          }
+        });
+
+        setTimeout(() => {
+          if (active && !activeSession) {
+            authListener.subscription.unsubscribe();
+            setError("Failed to establish session. Please ensure you are logged into GitHub and try again.");
+          }
+        }, 4000);
+        return;
+      }
+
+      await verifyAndRedirect(activeSession.access_token, activeSession.user.email);
+    }
+
+    async function verifyAndRedirect(token: string, email?: string) {
       try {
         const res = await fetch("/api/admin/auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            token: session.access_token,
-            email: session.user.email,
+            token,
+            email,
           }),
         });
 
@@ -37,14 +90,18 @@ export default function AdminCallbackPage() {
         if (data.success) {
           router.push("/admin/projects");
         } else {
-          setError(data.error || "Authorization rejected");
+          if (active) setError(data.error || "Authorization rejected");
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Network error during auth verification");
+        if (active) setError(err instanceof Error ? err.message : "Network error during auth verification");
       }
     }
 
     handleAuth();
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   return (

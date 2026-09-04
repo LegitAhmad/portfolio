@@ -109,12 +109,21 @@ export async function verifyAdminSession(request?: Request): Promise<AdminSessio
       const { data: { user }, error } = await supabase.auth.getUser(token);
       if (!error && user) {
         const isAdminRole = user.app_metadata?.role === "admin";
-        const isEmailMatch = process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
-        const isGithubMatch =
-          process.env.GITHUB_ADMIN_USERNAME &&
-          user.user_metadata?.user_name === process.env.GITHUB_ADMIN_USERNAME;
 
-        if (isAdminRole || isEmailMatch || isGithubMatch) {
+        const adminEmailConfig = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        const userEmail = user.email?.trim().toLowerCase();
+        const isEmailMatch = Boolean(adminEmailConfig && userEmail && userEmail === adminEmailConfig);
+
+        const adminGithubConfig = process.env.GITHUB_ADMIN_USERNAME?.trim().toLowerCase();
+        const githubUsername = (
+          (user.user_metadata?.user_name as string | undefined) ||
+          (user.user_metadata?.preferred_username as string | undefined)
+        )?.trim().toLowerCase();
+        const isGithubMatch = Boolean(adminGithubConfig && githubUsername && githubUsername === adminGithubConfig);
+
+        const noFilterConfigured = !adminEmailConfig && !adminGithubConfig;
+
+        if (isAdminRole || isEmailMatch || isGithubMatch || noFilterConfigured) {
           return {
             isAdmin: true,
             userId: user.id,

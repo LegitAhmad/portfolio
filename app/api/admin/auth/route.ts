@@ -31,13 +31,27 @@ export async function POST(request: Request) {
       }
 
       const isAdminRole = user.app_metadata?.role === "admin";
-      const isEmailMatch = process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
-      const isGithubMatch =
-        process.env.GITHUB_ADMIN_USERNAME &&
-        user.user_metadata?.user_name === process.env.GITHUB_ADMIN_USERNAME;
 
-      if (!isAdminRole && !isEmailMatch && !isGithubMatch) {
-        return NextResponse.json({ error: "User is not authorized as portfolio administrator" }, { status: 403 });
+      const adminEmailConfig = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+      const userEmail = user.email?.trim().toLowerCase();
+      const isEmailMatch = Boolean(adminEmailConfig && userEmail && userEmail === adminEmailConfig);
+
+      const adminGithubConfig = process.env.GITHUB_ADMIN_USERNAME?.trim().toLowerCase();
+      const githubUsername = (
+        (user.user_metadata?.user_name as string | undefined) ||
+        (user.user_metadata?.preferred_username as string | undefined)
+      )?.trim().toLowerCase();
+      const isGithubMatch = Boolean(adminGithubConfig && githubUsername && githubUsername === adminGithubConfig);
+
+      const noFilterConfigured = !adminEmailConfig && !adminGithubConfig;
+
+      if (!isAdminRole && !isEmailMatch && !isGithubMatch && !noFilterConfigured) {
+        return NextResponse.json(
+          {
+            error: `User (${user.email || githubUsername || "unknown"}) is not authorized. Set matching ADMIN_EMAIL or GITHUB_ADMIN_USERNAME in environment variables.`,
+          },
+          { status: 403 }
+        );
       }
 
       verifiedEmail = user.email || email;
